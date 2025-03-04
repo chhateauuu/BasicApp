@@ -23,10 +23,13 @@ target 'BasicApp' do
   # Enable Hermes explicitly
   use_react_native!(
     :path => config[:reactNativePath],
-    # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/..",
-    :hermes_enabled => false # Enable Hermes here
+    :hermes_enabled => false # Ensure Hermes is disabled if not needed
   )
+  
+  # Explicitly disable new architecture
+  ENV['RCT_NEW_ARCH_ENABLED'] = '0'
+  
 
   target 'BasicAppTests' do
     inherit! :complete
