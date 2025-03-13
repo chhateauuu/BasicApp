@@ -184,10 +184,10 @@ const CategoriesScreen = () => {
         Alert.alert('Error', 'User is not logged in.');
         return;
       }
-
+      domain = subDomain;
       await axios.post(
         `${API_BASE_URL}/api/log-activity`,
-        { category, subDomain },
+        { category, domain },
         {
           headers: {
             Authorization: `Bearer ${sessionToken}`,
@@ -302,17 +302,11 @@ const CategoriesScreen = () => {
       const currentPrefsResponse = await axios.get(
         `${API_BASE_URL}/api/user-preferences`,
         {
-          headers: {
-            Authorization: `Bearer ${sessionToken}`,
-          },
+          headers: { Authorization: `Bearer ${sessionToken}` },
         }
       );
+      const currentPrefs = currentPrefsResponse.data.preferences || [];
       
-      // Get current preferences or initialize empty array if none exist
-      let currentPrefs = [];
-      if (currentPrefsResponse.data && currentPrefsResponse.data.preferences) {
-        currentPrefs = currentPrefsResponse.data.preferences;
-      }
       
       console.log("Current preferences from API:", JSON.stringify(currentPrefs));
       console.log("Adding new preferences:", JSON.stringify(selectedCategories));
@@ -377,21 +371,19 @@ const CategoriesScreen = () => {
       });
       
       console.log("Final combined preferences to send:", JSON.stringify(combinedPreferences));
-      
+      console.log("Selected categories:", JSON.stringify(selectedCategories));
       // Update user preferences on the server with the combined list
-      const response = await axios.post(
-        `${API_BASE_URL}/api/user-preferences`,
-        { 
-          preferences: combinedPreferences
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${sessionToken}`,
-          },
-        }
-      );
-      
-      console.log("Server response after adding preferences:", JSON.stringify(response.data));
+      for (const { category, subDomain } of selectedCategories) {
+        console.log("Logging activity for is sending request:", category, subDomain);
+        await axios.post(
+          `${API_BASE_URL}/api/log-activity`, 
+          { category, domain: subDomain }, 
+          {
+            headers: { Authorization: `Bearer ${sessionToken}` },
+          }
+        );
+        console.log("Activity logged successfully", category, subDomain);
+      }
       
       // Create a more descriptive success message
       const categoryCounts = {};
