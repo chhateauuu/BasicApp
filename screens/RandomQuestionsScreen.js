@@ -12,7 +12,7 @@ const RandomQuestionsScreen = ({ route, navigation }) => {
   useEffect(() => {
     const fetchRandomQuestions = async () => {
       try {
-        const response = await axios.get('https://backend-yhta.onrender.com/api/random-questions', {
+        const response = await axios.get('https://dementia-backend-gamma.vercel.app/api/random-questions', {
           params: { categories: categories.join(',') },
         });
         setQuestions(response.data.questions);

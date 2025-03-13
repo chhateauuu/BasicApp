@@ -18,7 +18,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-const API_BASE_URL = `https://backend-yhta.onrender.com`;
+const API_BASE_URL = `https://dementia-backend-gamma.vercel.app`;
 const { width } = Dimensions.get("window");
 
 const LoginScreen = ({ navigation }) => {
