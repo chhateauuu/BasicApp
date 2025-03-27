@@ -22,7 +22,7 @@ import axios from "axios";
 import Menu from "./Menu"; // Import the Menu component
 import { useFocusEffect } from "@react-navigation/native";
 
-const API_BASE_URL = `https://backend-yhta.onrender.com`;
+const API_BASE_URL = `https://dementia-backend-gamma.vercel.app`;
 const { width, height } = Dimensions.get("window");
 
 // Category emojis mapping
@@ -61,6 +61,7 @@ const HomeScreen = ({ navigation }) => {
     }
     
     console.log("Processing preferences array:", JSON.stringify(prefsArray));
+    console.log("Current API_BASE_URL:", API_BASE_URL);
     
     prefsArray.forEach((pref, index) => {
       try {

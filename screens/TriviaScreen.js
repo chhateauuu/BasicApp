@@ -14,7 +14,7 @@ const TriviaScreen = ({ route }) => {
 
   const { category, subDomain } = route.params;
 
-  const API_BASE_URL = `https://backend-yhta.onrender.com`; // Replace with your local IP address
+  const API_BASE_URL = `https://dementia-backend-gamma.vercel.app`; // Replace with your local IP address
   const QUESTIONS_API_URL = `${API_BASE_URL}/api/questions?category=${category}&subDomain=${subDomain}`;
 
   useEffect(() => {
