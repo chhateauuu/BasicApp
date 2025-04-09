@@ -10,6 +10,7 @@ import AnswerScreen from "./screens/AnswerScreen";
 import RandomQuestionsScreen from "./screens/RandomQuestionsScreen";
 
 
+/*ting */
 const Stack = createStackNavigator();
 
 const App = () => (
