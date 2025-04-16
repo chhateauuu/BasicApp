@@ -1,17 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, SafeAreaView, StatusBar } from 'react-native';
 import axios from 'axios';
+import { CHATGPT_API_KEY } from '../.env'
 
 const AnswerScreen = ({ route, navigation }) => {
   const { selectedAnswers = [], questions = [] } = route.params;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [description, setDescription] = useState('');
-
-  const CHATGPT_API_KEY = process.env.CHATGPT_API_KEY; // Replace with your OpenAI API key
-
-
-
+  const CHATGPT_API_KEY = process.env.CHATGPT_API_KEY;
 
   useEffect(() => {
     if (questions[currentIndex] && selectedAnswers[currentIndex]) {

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import axios from 'axios';
+import { CHATGPT_API_KEY } from '../.env'
 
 const RandomQuestionsScreen = ({ route, navigation }) => {
   console.log(route.params)
@@ -9,7 +10,7 @@ const RandomQuestionsScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState([]);
-  const CHATGPT_API_KEY = "process.env.CHATGPT_API_KEY"; // Replace with your OpenAI API key
+  const CHATGPT_API_KEY = process.env.CHATGPT_API_KEY;
 
   
 
@@ -127,7 +128,11 @@ const generateAndSaveGPTQuestions = async () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
-      navigation.navigate('AnswerScreen', { selectedAnswers, questions }); // Redirect to AnswerScreen
+      console.log("Redirecting to ScoreScreen");
+      navigation.navigate('ScoreScreen', {
+        selectedAnswers: updatedAnswers, // Pass the final updated answers
+        questions // Pass the questions array
+      });
     }
   };
 

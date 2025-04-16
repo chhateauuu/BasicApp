@@ -8,6 +8,7 @@ import CategoriesScreen from  "./screens/CategoriesScreen";
 import TriviaScreen from "./screens/TriviaScreen";
 import AnswerScreen from "./screens/AnswerScreen";
 import RandomQuestionsScreen from "./screens/RandomQuestionsScreen";
+import ScoreScreen from "./screens/ScoreScreen";
 
 
 /*ting */
@@ -23,7 +24,7 @@ const App = () => (
             <Stack.Screen name="Trivia" component={TriviaScreen} />
             <Stack.Screen name="AnswerScreen" component={AnswerScreen} />
             <Stack.Screen name="RandomQuestionsScreen" component={RandomQuestionsScreen} />
-
+            <Stack.Screen name="ScoreScreen" component={ScoreScreen} />
 
 
 
