@@ -19,7 +19,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Menu from './Menu'; // Import the Menu component
 
-const API_BASE_URL = `https://dementia-backend-gamma.vercel.app`;
+const API_BASE_URL = `http://localhost:6000`;
 const { width, height } = Dimensions.get('window');
 
 // Menu icons
@@ -53,6 +53,10 @@ const CategoriesScreen = () => {
   // Animation for the menu
   const menuAnimation = useRef(new Animated.Value(-width * 0.7)).current;
   const screenOpacity = useRef(new Animated.Value(1)).current;
+
+  // New animation values for notification
+  const notificationSlide = useRef(new Animated.Value(-100)).current;
+  const notificationOpacity = useRef(new Animated.Value(0)).current;
 
   const categories = [
     {
@@ -275,6 +279,43 @@ const CategoriesScreen = () => {
     );
   };
 
+  // Function to show notification
+  const showNotification = (message) => {
+    setSuccessMessage(message);
+    
+    // Animation sequence
+    Animated.parallel([
+      Animated.timing(notificationSlide, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(notificationOpacity, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    
+    // Hide notification after 5 seconds
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(notificationSlide, {
+          toValue: -100,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(notificationOpacity, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setSuccessMessage('');
+      });
+    }, 5000);
+  };
+
   // New function to handle adding selected categories
   const handleAddCategories = async () => {
     if (selectedCategories.length === 0) {
@@ -283,6 +324,12 @@ const CategoriesScreen = () => {
     }
     
     console.log("About to add categories:", JSON.stringify(selectedCategories));
+    
+    // Store the selected categories to create the notification message
+    const categoriesForMessage = [...selectedCategories];
+    
+    // Clear selections and hide "Add" button immediately
+    setSelectedCategories([]);
     
     try {
       const sessionToken = await AsyncStorage.getItem('sessionToken');
@@ -294,7 +341,7 @@ const CategoriesScreen = () => {
       }
       
       // Log activity for each selected category
-      for (const { category, subDomain } of selectedCategories) {
+      for (const { category, subDomain } of categoriesForMessage) {
         await logActivity(category, subDomain);
       }
       
@@ -309,7 +356,7 @@ const CategoriesScreen = () => {
       
       
       console.log("Current preferences from API:", JSON.stringify(currentPrefs));
-      console.log("Adding new preferences:", JSON.stringify(selectedCategories));
+      console.log("Adding new preferences:", JSON.stringify(categoriesForMessage));
       
       // Combine current and new preferences
       // Use a Set to track unique category-subDomain pairs to avoid duplicates
@@ -357,7 +404,7 @@ const CategoriesScreen = () => {
       });
       
       // Add new preferences
-      selectedCategories.forEach(item => {
+      categoriesForMessage.forEach(item => {
         const key = `${item.category}-${item.subDomain}`;
         console.log(`Processing new preference: ${key}`);
         
@@ -371,9 +418,9 @@ const CategoriesScreen = () => {
       });
       
       console.log("Final combined preferences to send:", JSON.stringify(combinedPreferences));
-      console.log("Selected categories:", JSON.stringify(selectedCategories));
+      console.log("Selected categories:", JSON.stringify(categoriesForMessage));
       // Update user preferences on the server with the combined list
-      for (const { category, subDomain } of selectedCategories) {
+      for (const { category, subDomain } of categoriesForMessage) {
         console.log("Logging activity for is sending request:", category, subDomain);
         await axios.post(
           `${API_BASE_URL}/api/log-activity`, 
@@ -387,7 +434,7 @@ const CategoriesScreen = () => {
       
       // Create a more descriptive success message
       const categoryCounts = {};
-      selectedCategories.forEach(({ category, subDomain }) => {
+      categoriesForMessage.forEach(({ category, subDomain }) => {
         if (!categoryCounts[category]) {
           categoryCounts[category] = [];
         }
@@ -401,9 +448,9 @@ const CategoriesScreen = () => {
         );
       
       // Create the main success message with counts
-      let successMsg = selectedCategories.length === 1
+      let successMsg = categoriesForMessage.length === 1
         ? `Added 1 subcategory successfully!\n`
-        : `Added ${selectedCategories.length} subcategories successfully!\n`;
+        : `Added ${categoriesForMessage.length} subcategories successfully!\n`;
       
       // Add detail about which categories and subcategories were added
       if (categoryMessages.length > 0) {
@@ -412,14 +459,8 @@ const CategoriesScreen = () => {
       
       console.log("Success message:", successMsg);
       
-      // Show success message
-      setSuccessMessage(successMsg);
-      
-      // Clear message and selections after 5 seconds (increased from 3 for readability)
-      setTimeout(() => {
-        setSuccessMessage('');
-        setSelectedCategories([]);
-      }, 5000);
+      // Show animated notification
+      showNotification(successMsg);
       
     } catch (error) {
       console.error('Error adding categories:', error.response?.data || error.message);
@@ -441,6 +482,24 @@ const CategoriesScreen = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#F5F3FF" barStyle="dark-content" />
       
+      {/* Success Notification */}
+      {successMessage ? (
+        <Animated.View 
+          style={[
+            styles.notificationContainer,
+            {
+              transform: [{ translateY: notificationSlide }],
+              opacity: notificationOpacity
+            }
+          ]}
+        >
+          <View style={styles.notificationContent}>
+            <Text style={styles.notificationIcon}>✓</Text>
+            <Text style={styles.notificationText}>{successMessage}</Text>
+          </View>
+        </Animated.View>
+      ) : null}
+      
       {/* Main Content */}
       <Animated.View style={[styles.mainContent, { opacity: screenOpacity }]}>
         {/* Header with Menu Icon */}
@@ -451,13 +510,6 @@ const CategoriesScreen = () => {
           <Text style={styles.headerTitle}>Categories</Text>
           <View style={styles.emptyBox} />
         </View>
-
-        {/* Success message */}
-        {successMessage ? (
-          <View style={styles.successMessage}>
-            <Text style={styles.successMessageText}>{successMessage}</Text>
-          </View>
-        ) : null}
 
         <ScrollView 
           style={styles.scrollView} 
@@ -756,18 +808,44 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  successMessage: {
-    backgroundColor: '#10B981', // Green success color
-    padding: 12,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 8,
-    alignItems: 'center',
+  notificationContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    padding: 16,
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 16 : 16,
   },
-  successMessageText: {
+  notificationContent: {
+    backgroundColor: '#8B5CF6', // Purple to match app theme
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  notificationIcon: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginRight: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    textAlign: 'center',
+    lineHeight: 30,
+  },
+  notificationText: {
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: '500',
+    flex: 1,
   },
 });
 
