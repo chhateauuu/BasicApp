@@ -39,7 +39,7 @@ const TriviaScreen = ({ route }) => {
 
   const { category, subDomain } = route.params;
 
-  const API_BASE_URL = `http://localhost:6000`;
+  const API_BASE_URL = `https://dementia-backend-gamma.vercel.app`;
   const QUESTIONS_API_URL = `${API_BASE_URL}/api/questions?category=${category}&subDomain=${subDomain}`;
 
   // Toggle menu function
