@@ -21,6 +21,9 @@ import axios from "axios";
 const API_BASE_URL = `https://dementia-backend-gamma.vercel.app`;
 const { width } = Dimensions.get("window");
 
+// Back button icon
+const BACK_ICON = "←";
+
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -102,12 +105,20 @@ const LoginScreen = ({ navigation }) => {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.keyboardAvoidingView}
         >
+          {/* Back Button */}
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.navigate("Home")}
+          >
+            <Text style={styles.backButtonText}>{BACK_ICON}</Text>
+          </TouchableOpacity>
+
           <Animated.View style={[
             styles.container,
             { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
           ]}>
             <View style={styles.headerContainer}>
-              <Text style={styles.title}>Cognizen</Text>
+              <Text style={styles.title}>CognizenX</Text>
               <Text style={styles.subtitle}>Welcome Back</Text>
               <Text style={styles.description}>Sign in to continue your journey</Text>
             </View>
@@ -182,7 +193,7 @@ const LoginScreen = ({ navigation }) => {
                 Don't have an account?{" "}
                 <Text
                   style={styles.signupLink}
-                  onPress={() => navigation.navigate("Signup")}
+                  onPress={() => navigation.navigate("SignUp")}
                 >
                   Sign Up
                 </Text>
@@ -215,6 +226,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 24,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 16,
+    left: 16, 
+    zIndex: 10,
+    padding: 8,
+  },
+  backButtonText: {
+    fontSize: 28,
+    color: "#4B5563",
   },
   headerContainer: {
     marginTop: 60,

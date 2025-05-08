@@ -45,6 +45,7 @@ const CategoriesScreen = () => {
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   // New state for selected categories
   const [selectedCategories, setSelectedCategories] = useState([]);
@@ -151,15 +152,31 @@ const CategoriesScreen = () => {
     setMenuOpen(!menuOpen);
   };
 
-  // Fetch User ID
+  // Check login status and fetch User ID
   useEffect(() => {
-    const fetchUserId = async () => {
+    const checkLoginAndFetchUserId = async () => {
       try {
         const sessionToken = await AsyncStorage.getItem('sessionToken');
         if (!sessionToken) {
-          throw new Error('Session token not found');
+          // Not logged in, redirect to Home screen
+          setIsLoggedIn(false);
+          setLoading(false);
+          Alert.alert(
+            'Login Required', 
+            'You need to be logged in to access categories.',
+            [
+              { 
+                text: 'OK', 
+                onPress: () => navigation.replace('Home')
+              }
+            ]
+          );
+          return;
         }
     
+        setIsLoggedIn(true);
+        
+        // Fetch user ID since user is logged in
         const response = await axios.get(`${API_BASE_URL}/api/auth/get-user-id`, {
           headers: {
             Authorization: `Bearer ${sessionToken}`,
@@ -172,10 +189,11 @@ const CategoriesScreen = () => {
       } catch (error) {
         console.error('Error fetching user ID:', error.response?.data || error.message);
         Alert.alert('Error', 'Failed to retrieve user information. Please log in again.');
-        navigation.replace('Login');
+        navigation.replace('Home');
       }
     };
-    fetchUserId();
+    
+    checkLoginAndFetchUserId();
   }, [navigation]);
 
   // Log Activity
@@ -207,6 +225,12 @@ const CategoriesScreen = () => {
 
   // Handle Category Selection
   const handleCategorySelect = async (category, subDomain) => {
+    if (!isLoggedIn) {
+      Alert.alert('Login Required', 'You need to be logged in to select categories.');
+      navigation.replace('Home');
+      return;
+    }
+    
     if (!userId) {
       Alert.alert('Error', 'User ID not found. Please log in again.');
       navigation.replace('Login');
@@ -246,6 +270,12 @@ const CategoriesScreen = () => {
 
   // New function to handle selection of categories
   const handleSubdomainSelect = (category, subDomain) => {
+    if (!isLoggedIn) {
+      Alert.alert('Login Required', 'You need to be logged in to select categories.');
+      navigation.replace('Home');
+      return;
+    }
+    
     animateButtonPress();
     
     console.log(`Selection action: category=${category}, subDomain=${subDomain}`);
@@ -590,6 +620,8 @@ const CategoriesScreen = () => {
         isOpen={menuOpen}
         closeMenu={toggleMenu}
         menuAnimation={menuAnimation}
+        isLoggedIn={isLoggedIn}
+        handleLogout={handleLogout}
       />
     </SafeAreaView>
   );

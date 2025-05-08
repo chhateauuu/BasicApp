@@ -21,6 +21,9 @@ import axios from "axios";
 const API_BASE_URL = `https://dementia-backend-gamma.vercel.app`;
 const { width } = Dimensions.get("window");
 
+// Back button icon
+const BACK_ICON = "←";
+
 const SignupScreen = ({ navigation }) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -107,12 +110,20 @@ const SignupScreen = ({ navigation }) => {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.keyboardAvoidingView}
         >
+          {/* Back Button */}
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.navigate("Home")}
+          >
+            <Text style={styles.backButtonText}>{BACK_ICON}</Text>
+          </TouchableOpacity>
+          
           <Animated.View style={[
             styles.container,
             { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
           ]}>
             <View style={styles.headerContainer}>
-              <Text style={styles.title}>Cognizen</Text>
+              <Text style={styles.title}>CognizenX</Text>
               <Text style={styles.subtitle}>Create Account</Text>
               <Text style={styles.description}>Join us to begin your memory care journey</Text>
             </View>
@@ -232,6 +243,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 24,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 16,
+    left: 16, 
+    zIndex: 10,
+    padding: 8,
+  },
+  backButtonText: {
+    fontSize: 28,
+    color: "#4B5563",
   },
   headerContainer: {
     marginTop: 60,

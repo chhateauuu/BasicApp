@@ -11,13 +11,81 @@ import {
   Alert
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
+const API_BASE_URL = `https://dementia-backend-gamma.vercel.app`;
 const { width } = Dimensions.get('window');
 
 // Menu icons
 const CLOSE_ICON = '✕';
 
-const Menu = ({ navigation, isOpen, closeMenu, menuAnimation }) => {
+const Menu = ({ navigation, isOpen, closeMenu, menuAnimation, isLoggedIn, handleLogout }) => {
+  
+  // Handle delete account
+  const handleDeleteAccount = async () => {
+    try {
+      // Show confirmation dialog first
+      Alert.alert(
+        "Delete Account", 
+        "Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently lost.",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Delete", 
+            style: "destructive",
+            onPress: async () => {
+              try {
+                const sessionToken = await AsyncStorage.getItem("sessionToken");
+                
+                if (!sessionToken) {
+                  Alert.alert("Error", "You must be logged in to delete your account.");
+                  return;
+                }
+                
+                // Call the delete account endpoint
+                await axios.delete(`${API_BASE_URL}/api/auth/delete-account`, {
+                  headers: {
+                    Authorization: `Bearer ${sessionToken}`,
+                  },
+                });
+                
+                // Clear session token
+                await AsyncStorage.removeItem("sessionToken");
+                
+                // Show success message
+                Alert.alert(
+                  "Account Deleted", 
+                  "Your account has been successfully deleted.",
+                  [
+                    {
+                      text: "OK",
+                      onPress: () => {
+                        closeMenu();
+                        navigation.replace("Home");
+                      }
+                    }
+                  ]
+                );
+              } catch (error) {
+                console.error("Error deleting account:", error);
+                Alert.alert(
+                  "Error", 
+                  "Failed to delete account. Please try again later."
+                );
+              }
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error("Delete Account Error:", error);
+      Alert.alert("Error", "Failed to process your request. Please try again.");
+    }
+  };
+  
   return (
     <>
       <Animated.View style={[styles.menu, { transform: [{ translateX: menuAnimation }] }]}>
@@ -42,20 +110,48 @@ const Menu = ({ navigation, isOpen, closeMenu, menuAnimation }) => {
             <Text style={styles.menuItemText}>Home</Text>
           </TouchableOpacity>
           
-          {/* Categories next */}
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => {
-              // Navigate first, then close menu
-              navigation.navigate("Categories");
-              closeMenu();
-            }}
-          >
-            <Text style={styles.menuItemIcon}>📂</Text>
-            <Text style={styles.menuItemText}>Categories</Text>
-          </TouchableOpacity>
+          {/* Categories - only shown for logged in users */}
+          {isLoggedIn && (
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => {
+                // Navigate first, then close menu
+                navigation.navigate("Categories");
+                closeMenu();
+              }}
+            >
+              <Text style={styles.menuItemIcon}>📂</Text>
+              <Text style={styles.menuItemText}>Categories</Text>
+            </TouchableOpacity>
+          )}
           
+          {/* Login - only shown for anonymous users */}
+          {!isLoggedIn && (
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => {
+                navigation.navigate("Login");
+                closeMenu();
+              }}
+            >
+              <Text style={styles.menuItemIcon}>🔑</Text>
+              <Text style={styles.menuItemText}>Log In</Text>
+            </TouchableOpacity>
+          )}
           
+          {/* Sign Up - only shown for anonymous users */}
+          {!isLoggedIn && (
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => {
+                navigation.navigate("SignUp");
+                closeMenu();
+              }}
+            >
+              <Text style={styles.menuItemIcon}>📝</Text>
+              <Text style={styles.menuItemText}>Sign Up</Text>
+            </TouchableOpacity>
+          )}
           
           {/* History (Coming Soon) */}
           <TouchableOpacity 
@@ -71,28 +167,47 @@ const Menu = ({ navigation, isOpen, closeMenu, menuAnimation }) => {
           </TouchableOpacity>
         </View>
         
-        {/* Logout at the bottom */}
-        <View style={styles.logoutContainer}>
-          <View style={styles.menuDivider} />
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => {
-              // Handle logout process
-              try {
-                AsyncStorage.removeItem("sessionToken");
-                Alert.alert("Logout Successful", "You have been logged out.");
-                navigation.replace("Login");
-              } catch (error) {
-                console.error("Logout Error:", error);
-                Alert.alert("Error", "Failed to log out. Please try again.");
-              }
-              closeMenu();
-            }}
-          >
-            <Text style={styles.menuItemIcon}>🚪</Text>
-            <Text style={[styles.menuItemText, styles.logoutText]}>Logout</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Account actions for logged in users */}
+        {isLoggedIn && (
+          <View style={styles.logoutContainer}>
+            <View style={styles.menuDivider} />
+            
+            {/* Logout option */}
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => {
+                // Use the handleLogout prop if available, otherwise fallback to old implementation
+                if (handleLogout) {
+                  handleLogout();
+                } else {
+                  try {
+                    AsyncStorage.removeItem("sessionToken");
+                    Alert.alert("Logout Successful", "You have been logged out.");
+                    navigation.replace("Login");
+                  } catch (error) {
+                    console.error("Logout Error:", error);
+                    Alert.alert("Error", "Failed to log out. Please try again.");
+                  }
+                }
+                closeMenu();
+              }}
+            >
+              <Text style={styles.menuItemIcon}>🚪</Text>
+              <Text style={[styles.menuItemText, styles.logoutText]}>Logout</Text>
+            </TouchableOpacity>
+            
+            {/* Delete Account option */}
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => {
+                handleDeleteAccount();
+              }}
+            >
+              <Text style={styles.menuItemIcon}>🗑️</Text>
+              <Text style={[styles.menuItemText, styles.deleteAccountText]}>Delete Account</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </Animated.View>
       
       {/* Overlay to close menu when clicking outside */}
@@ -174,6 +289,10 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     color: "#EF4444",
+  },
+  deleteAccountText: {
+    color: "#EF4444",
+    fontWeight: "600",
   },
   overlay: {
     position: "absolute",
