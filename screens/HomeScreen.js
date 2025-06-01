@@ -38,6 +38,16 @@ const categoryEmojis = {
   default: "📱",
 };
 
+// Default categories for anonymous users
+const DEFAULT_CATEGORIES = {
+  "General Knowledge": ["Trivia", "Facts"],
+  "History": ["World History", "Ancient Civilizations"],
+  "Geography": ["Countries", "Landmarks"],
+  "Entertainment": ["Movies", "Music", "TV Shows"],
+  "Sports": ["Cricket", "Football", "Olympics"],
+  "Science": ["Biology", "Technology"]
+};
+
 // Menu icons (using emoji or text to avoid vector icon issues)
 const MENU_ICON = "≡";
 const CLOSE_ICON = "✕";
@@ -47,6 +57,8 @@ const HomeScreen = ({ navigation }) => {
   const [preferences, setPreferences] = useState([]);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginPromptVisible, setLoginPromptVisible] = useState(false);
   
   // Animation values
   const menuAnimation = useRef(new Animated.Value(-width * 0.7)).current;
@@ -134,60 +146,87 @@ const HomeScreen = ({ navigation }) => {
     return grouped;
   };
   
-  // Get grouped preferences from current state
-  const groupedPreferences = processPreferences(preferences);
+  // Check login status
+  const checkLoginStatus = async () => {
+    try {
+      const sessionToken = await AsyncStorage.getItem("sessionToken");
+      setIsLoggedIn(!!sessionToken);
+      return !!sessionToken;
+    } catch (error) {
+      console.error("Error checking login status:", error);
+      return false;
+    }
+  };
+
+  // Get grouped preferences from current state or use default for anonymous users
+  const groupedPreferences = isLoggedIn ? processPreferences(preferences) : DEFAULT_CATEGORIES;
 
   const fetchUserPreferences = async () => {
     setLoading(true);
+    
     try {
-      const sessionToken = await AsyncStorage.getItem("sessionToken");
-      console.log("Fetching preferences with token:", sessionToken);
+      const loggedIn = await checkLoginStatus();
       
-      const response = await axios.get(`${API_BASE_URL}/api/user-preferences`, {
-        headers: {
-          Authorization: `Bearer ${sessionToken}`,
-        },
-      });
-      
-      console.log("Raw API Response:", JSON.stringify(response.data));
-      
-      if (response.data && response.data.preferences) {
-        const prefs = response.data.preferences;
-        console.log("Preferences from API:", JSON.stringify(prefs));
+      if (loggedIn) {
+        // User is logged in, fetch their preferences
+        const sessionToken = await AsyncStorage.getItem("sessionToken");
+        console.log("Fetching preferences with token:", sessionToken);
         
-        // Inspect all preferences in detail to help debug
-        prefs.forEach((pref, i) => {
-          console.log(`Preference ${i}:`, JSON.stringify(pref));
-          console.log(`  Keys: ${Object.keys(pref).join(', ')}`);
-          if (pref.category) {
-            console.log(`  Category: ${typeof pref.category === 'string' ? 
-              pref.category : JSON.stringify(pref.category)}`);
-          }
-          if (pref.subDomain) {
-            console.log(`  SubDomain: ${pref.subDomain}`);
-          }
+        const response = await axios.get(`${API_BASE_URL}/api/user-preferences`, {
+          headers: {
+            Authorization: `Bearer ${sessionToken}`,
+          },
         });
         
-        // Accept ALL preferences from the API
-        setPreferences(prefs);
-        console.log("Set preferences from API, count:", prefs.length);
+        console.log("Raw API Response:", JSON.stringify(response.data));
+        
+        if (response.data && response.data.preferences) {
+          const prefs = response.data.preferences;
+          console.log("Preferences from API:", JSON.stringify(prefs));
+          
+          // Inspect all preferences in detail to help debug
+          prefs.forEach((pref, i) => {
+            console.log(`Preference ${i}:`, JSON.stringify(pref));
+            console.log(`  Keys: ${Object.keys(pref).join(', ')}`);
+            if (pref.category) {
+              console.log(`  Category: ${typeof pref.category === 'string' ? 
+                pref.category : JSON.stringify(pref.category)}`);
+            }
+            if (pref.subDomain) {
+              console.log(`  SubDomain: ${pref.subDomain}`);
+            }
+          });
+          
+          // Accept ALL preferences from the API
+          setPreferences(prefs);
+          console.log("Set preferences from API, count:", prefs.length);
+        } else {
+          console.log("No preferences found in response");
+          setPreferences([]);
+        }
       } else {
-        console.log("No preferences found in response");
+        // User is not logged in, use default categories
+        console.log("User not logged in, using default categories");
         setPreferences([]);
       }
     } catch (error) {
       console.error("Error fetching preferences:", error);
-      Alert.alert("Error", "Could not fetch your preferences. Please try again later.");
+      if (isLoggedIn) {
+        Alert.alert("Error", "Could not fetch your preferences. Please try again later.");
+      }
       setPreferences([]);
     }
+    
     setLoading(false);
   };
 
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem("sessionToken");
+      setIsLoggedIn(false);
       Alert.alert("Logout Successful", "You have been logged out.");
-      navigation.replace("Login");
+      // Stay on the same screen but show default categories
+      fetchUserPreferences();
     } catch (error) {
       console.error("Logout Error:", error);
       Alert.alert("Error", "Failed to log out. Please try again.");
@@ -238,43 +277,31 @@ const HomeScreen = ({ navigation }) => {
     }, [])
   );
 
+  // Show login prompt when an account-required action is attempted
+  const showLoginPrompt = () => {
+    setLoginPromptVisible(true);
+  };
+
   // Group preferences by category
   const renderCategorySections = () => {
-    if (!preferences || preferences.length === 0) {
+    if (Object.keys(groupedPreferences).length === 0) {
       console.log("No preferences available to render");
       return (
         <View style={styles.emptyState}>
           <Text style={styles.emptyEmoji}>😕</Text>
           <Text style={styles.emptyStateText}>
-            No categories selected yet. Start exploring!
+            No categories available. {isLoggedIn ? "Start exploring!" : "Please log in to customize categories."}
           </Text>
         </View>
       );
     }
 
-    console.log("Rendering preferences:", JSON.stringify(preferences));
-    
     // Log the structure of grouped preferences in a clearer format
     console.log("Grouped Preferences Structure at render time:");
     Object.entries(groupedPreferences).forEach(([category, subdomains]) => {
       console.log(`Category: ${category}`);
       console.log(`  Subdomains (${subdomains?.length || 0}): ${subdomains && subdomains.length ? subdomains.join(', ') : 'None'}`);
     });
-    
-    // If no categories found after processing, show empty state
-    if (Object.keys(groupedPreferences).length === 0) {
-      console.log("No categories found after processing");
-      return (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyEmoji}>😕</Text>
-          <Text style={styles.emptyStateText}>
-            No valid categories found. Please add some categories!
-          </Text>
-        </View>
-      );
-    }
-
-    console.log(`Rendering ${Object.keys(groupedPreferences).length} category sections`);
     
     // Render the categories
     return Object.entries(groupedPreferences).map(([category, subDomains]) => {
@@ -295,10 +322,14 @@ const HomeScreen = ({ navigation }) => {
             <TouchableOpacity
               style={styles.categoryButton}
               onPress={() => {
-                console.log(`Starting quiz for category: ${category}`);
-                navigation.navigate("RandomQuestionsScreen", {
-                  categories: [category],
-                });
+                if (isLoggedIn) {
+                  console.log(`Starting quiz for category: ${category}`);
+                  navigation.navigate("RandomQuestionsScreen", {
+                    categories: [category],
+                  });
+                } else {
+                  showLoginPrompt();
+                }
               }}
             >
               <Text style={styles.categoryButtonText}>Start Quiz</Text>
@@ -315,11 +346,15 @@ const HomeScreen = ({ navigation }) => {
                     key={`${category}-${subdomain}-${index}`}
                     style={styles.subdomainItem}
                     onPress={() => {
-                      console.log(`Starting quiz for ${category} - ${subdomain}`);
-                      navigation.navigate("RandomQuestionsScreen", {
-                        categories: [category],
-                        subDomain: subdomain
-                      });
+                      if (isLoggedIn) {
+                        console.log(`Starting quiz for ${category} - ${subdomain}`);
+                        navigation.navigate("RandomQuestionsScreen", {
+                          categories: [category],
+                          subDomain: subdomain
+                        });
+                      } else {
+                        showLoginPrompt();
+                      }
                     }}
                   >
                     <Text style={styles.subdomainText}>{subdomain}</Text>
@@ -338,6 +373,11 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const handleQuizAll = () => {
+    if (!isLoggedIn) {
+      showLoginPrompt();
+      return;
+    }
+    
     // Check if there are any categories available
     if (Object.keys(groupedPreferences).length === 0) {
       Alert.alert("No Categories", "Please add some categories first.");
@@ -374,7 +414,7 @@ const HomeScreen = ({ navigation }) => {
           <TouchableOpacity onPress={toggleMenu} style={styles.menuButton}>
             <Text style={styles.menuIconText}>{MENU_ICON}</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Cognizen</Text>
+          <Text style={styles.headerTitle}>CognizenX</Text>
           <View style={styles.emptyBox} />
         </View>
 
@@ -396,7 +436,13 @@ const HomeScreen = ({ navigation }) => {
           {/* Add More Categories Button */}
           <TouchableOpacity
             style={styles.addMoreButton}
-            onPress={() => navigation.navigate("Categories")}
+            onPress={() => {
+              if (isLoggedIn) {
+                navigation.navigate("Categories");
+              } else {
+                showLoginPrompt();
+              }
+            }}
           >
             <Text style={styles.addMoreButtonIcon}>{PLUS_ICON}</Text>
             <Text style={styles.addMoreText}>Add More Categories</Text>
@@ -404,12 +450,61 @@ const HomeScreen = ({ navigation }) => {
         </ScrollView>
       </Animated.View>
 
+      {/* Login Prompt Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={loginPromptVisible}
+        onRequestClose={() => setLoginPromptVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setLoginPromptVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Login Required</Text>
+                <Text style={styles.modalText}>
+                  You need to be logged in to access this feature.
+                </Text>
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.loginButton]}
+                    onPress={() => {
+                      setLoginPromptVisible(false);
+                      navigation.navigate("Login");
+                    }}
+                  >
+                    <Text style={styles.loginButtonText}>Login</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.signupButton]}
+                    onPress={() => {
+                      setLoginPromptVisible(false);
+                      navigation.navigate("SignUp");
+                    }}
+                  >
+                    <Text style={styles.signupButtonText}>Sign Up</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => setLoginPromptVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
       {/* Drawer Menu */}
       <Menu 
         navigation={navigation}
         isOpen={menuOpen}
         closeMenu={toggleMenu}
         menuAnimation={menuAnimation}
+        isLoggedIn={isLoggedIn}
+        handleLogout={handleLogout}
       />
       
       {menuOpen && (
@@ -642,6 +737,78 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     textAlign: "center",
     marginVertical: 8,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    borderRadius: 16,
+    padding: 20,
+    width: "80%",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#4B5563",
+    marginBottom: 12,
+  },
+  modalText: {
+    fontSize: 16,
+    color: "#6B7280",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginBottom: 12,
+  },
+  modalButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginHorizontal: 6,
+  },
+  loginButton: {
+    backgroundColor: "#A78BFA",
+  },
+  signupButton: {
+    backgroundColor: "#F3E8FF",
+    borderWidth: 1,
+    borderColor: "#A78BFA",
+  },
+  loginButtonText: {
+    color: "white",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  signupButtonText: {
+    color: "#A78BFA",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  cancelButton: {
+    paddingVertical: 10,
+  },
+  cancelButtonText: {
+    color: "#6B7280",
+    fontSize: 14,
   },
 });
 

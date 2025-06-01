@@ -9,24 +9,23 @@ import TriviaScreen from "./screens/TriviaScreen";
 import AnswerScreen from "./screens/AnswerScreen";
 import RandomQuestionsScreen from "./screens/RandomQuestionsScreen";
 
-
 /*ting */
 const Stack = createStackNavigator();
 
 const App = () => (
     <NavigationContainer>
-        <Stack.Navigator>
-            <Stack.Screen name="Signup" component={SignupScreen} />
+        <Stack.Navigator initialRouteName="Home">
+            <Stack.Screen 
+                name="Home" 
+                component={HomeScreen} 
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen name="SignUp" component={SignupScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="Categories" component={CategoriesScreen} />
             <Stack.Screen name="Trivia" component={TriviaScreen} />
             <Stack.Screen name="AnswerScreen" component={AnswerScreen} />
             <Stack.Screen name="RandomQuestionsScreen" component={RandomQuestionsScreen} />
-
-
-
-
         </Stack.Navigator>
     </NavigationContainer>
 );
