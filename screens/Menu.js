@@ -15,7 +15,8 @@ import axios from 'axios';
 import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
 
 // const API_BASE_URL = `https://dementia-backend-gamma.vercel.app`; // Live URL
-const API_BASE_URL = `http://localhost:6000`; // Local development
+const API_BASE_URL = `https://cognizen-x-backend.vercel.app`; // Live URL
+// const API_BASE_URL = `http://localhost:6000`; // Local development
 const { width, height } = Dimensions.get('window');
 
 const Menu = ({ navigation, isOpen, closeMenu, menuAnimation, isLoggedIn, handleLogout }) => {
