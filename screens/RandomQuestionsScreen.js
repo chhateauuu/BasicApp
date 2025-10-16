@@ -26,7 +26,8 @@ const RandomQuestionsScreen = ({ route, navigation }) => {
     console.log(categories?.join(','));
     try {
       // const response = await axios.get('https://dementia-backend-gamma.vercel.app/api/random-questions', { // Live URL
-      const response = await axios.get('http://localhost:6000/api/random-questions', { // Local development
+      const response = await axios.get('https://cognizen-x-backend.vercel.app/api/random-questions', { // Live URL
+      // const response = await axios.get('http://localhost:6000/api/random-questions', { // Local development
       
         params: { categories: categories.join(',') },
       });
