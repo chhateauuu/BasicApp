@@ -79,6 +79,7 @@ const generateAndSaveGPTQuestions = async () => {
     );
 
     let rawContent = response.data.choices[0]?.message?.content?.trim();
+    console.log('📝 Raw GPT Response:\n', rawContent);
 
     // OPTIONAL: Strip markdown if GPT replies in code block
     if (rawContent.startsWith("```json")) {
@@ -89,6 +90,7 @@ const generateAndSaveGPTQuestions = async () => {
 
     try {
       generatedQuestions = JSON.parse(rawContent);
+      console.log('📝 Generated Questions:\n', generatedQuestions);
     } catch (parseError) {
       console.error('❌ JSON parse error:', parseError, '\nRaw content:\n', rawContent);
       Alert.alert('Parsing Error', 'Failed to parse GPT response. Check formatting.');
@@ -105,20 +107,21 @@ const generateAndSaveGPTQuestions = async () => {
 
       // Double-check the backend URL is set
       // await axios.post('https://dementia-backend-gamma.vercel.app/api/add-questions', { // Live URL
-      await axios.post('http://localhost:6000/api/add-questions', { // Local development
+      await axios.post('https://cognizen-x-backend.vercel.app/api/add-questions', { // Live URL
+      // await axios.post('http://localhost:6000/api/add-questions', { // Local development
         category: categories.join(','),
         domain: subDomain,
         questions: formattedQuestions,
       });
 
-      Alert.alert('Success', 'Questions generated and saved successfully!');
+      // Alert.alert('Success', 'Questions generated and saved successfully!');
     } else {
       console.log('❌ No questions generated or invalid format:', generatedQuestions);
-      Alert.alert('Error', 'Failed to generate valid questions.');
+      // Alert.alert('Error', 'Failed to generate valid questions.');
     }
   } catch (error) {
     console.error('❌ Error generating questions:', error);
-    Alert.alert('Error', `Failed to generate questions: ${error.response?.data?.error?.message || error.message}`);
+    // Alert.alert('Error', `Failed to generate questions: ${error.response?.data?.error?.message || error.message}`);
   }
 };
 
