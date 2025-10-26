@@ -7,10 +7,15 @@ export const API_CONFIG = {
   // AUTH_URL: 'https://dementia-backend-gamma.vercel.app/api/auth', // Live URL
   // API_URL: 'https://dementia-backend-gamma.vercel.app/api' // Live URL
   
+  // Production (Hosted) Backend - New Backend
+  BASE_URL: 'https://cognizen-x-backend.vercel.app', // Live URL
+  AUTH_URL: 'https://cognizen-x-backend.vercel.app/api/auth', // Live URL
+  API_URL: 'https://cognizen-x-backend.vercel.app/api', // Live URL
+  
   // Local Development Backend
-  BASE_URL: 'http://localhost:6000', // Local development
-  AUTH_URL: 'http://localhost:6000/api/auth', // Local development
-  API_URL: 'http://localhost:6000/api' // Local development
+  // BASE_URL: 'http://localhost:6000', // Local development
+  // AUTH_URL: 'http://localhost:6000/api/auth', // Local development
+  // API_URL: 'http://localhost:6000/api' // Local development
 };
 
 // Export current URLs
